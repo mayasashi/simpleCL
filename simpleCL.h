@@ -5,60 +5,46 @@
 
 #define SIMPLECL_NOTIFY_WIN
 
-#ifdef SIMPLECL_NOTIFY_WIN
+#ifdef  SIMPLECL_NOTIFY_WIN
 #define SIMPLECL_WIN
-#elif SIMPLECL_NOTIFY_MAC
+#elif   SIMPLECL_NOTIFY_MAC
 #define SIMPLECL_MAC
 #else
 #define SIMPLECL_PLATFORM_UNKNOWN
 #endif
 
-#ifdef SIMPLECL_PLATFORM_UNKNOWN
-#error simpleclmessage : Failed to identify which platform you use. If you're working on windows or mac platform, it's necessary to define the macro SIMPLECL_NOTIFY_WIN or SIMPLECL_NOTIFY_MAC respectively.'
+#ifdef  SIMPLECL_PLATFORM_UNKNOWN
+#error  simpleclmessage : Failed to identify which platform you use. If you're working on windows or mac platform, it's necessary to define the macro SIMPLECL_NOTIFY_WIN or SIMPLECL_NOTIFY_MAC respectively.'
 #endif
 
-#define FREE_SAFE(arg) if(arg != NULL)free(arg);
+#ifndef FREESAFE_DEFINED
+#define FREE_SAFE(arg)       if(arg != NULL)free(arg);
+#define FREESAFE_DEFINED
+#endif
 
-#ifdef SIMPLECL_WIN
+#ifdef  SIMPLECL_WIN
 #pragma warning(disable:4996)  /*fopen*/
 #endif
 
-class simpleCL {
-public:
-	simpleCL();
-	~simpleCL();
-	void cleanup();
-private:
+#include "simpleCLqueryHardwareInfo.h"
 
-	void queryPlatformAndDevice();
-	void queryPlatformAndDeviceInfo();
-	void printPlatformAndDeviceInfo();
+typedef struct simpleCLcontainer{
+	cl_context     *   mainContext;
+	cl_platform_id *   mainPlatform;
+	cl_device_id   *   mainDevice;
+}_simpleCLcontainer;
 
-	cl_context *mainContext;
-	cl_device_id *mainDevice;
-	cl_platform_id *mainPlatform;
+typedef struct innerChainContainer *innerChainHandler;
 
-	cl_device_id **device;
-	cl_platform_id *platform;
-	cl_uint num_platform, *num_device;
+typedef struct simpleCLcontainer *simpleCLhandler;
 
-	char **platform_name;
-	char **platform_vendor;
-	size_t *platform_name_length;
-	size_t *platform_vendor_length;
+void            simpleCL_init ();
+void            simpleCL_close (simpleCLhandler handler);
 
-	char ***device_name;
-	char ***device_vendor;
-	cl_uint **device_uniqueID;
-	size_t **device_name_length;
-	size_t **device_vendor_length;
+extern simpleCLhandler mainCLHandler;
+extern innerChainHandler iCH;
 
 
-	bool openclzeroplatform;
-	bool openclzerodevice;
-
-	bool queryPlatformAndDeviceCallFlg;
-};
 
 
 #endif  /*SIMPLECL*/

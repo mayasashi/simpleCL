@@ -17,7 +17,6 @@ int print()
 
 int main(int argc, const char **argv)
 {
-	simpleCL *cl = new simpleCL();
-	delete cl;
+	simpleCL_init();
 	return print();
 }
