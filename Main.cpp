@@ -19,5 +19,6 @@ int main(int argc, const char **argv)
 {
 	simpleCL_init();
 	simpleCL_close();
+
 	return print();
 }

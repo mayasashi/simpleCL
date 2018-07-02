@@ -27,6 +27,7 @@
 #endif
 
 #include "simpleCLqueryHardwareInfo.h"
+#include "simpleCLIOHardwareInfo.h"
 
 typedef struct simpleCLcontainer{
 	cl_context     *   mainContext;
