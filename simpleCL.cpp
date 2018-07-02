@@ -17,3 +17,15 @@ void simpleCL_init() {
 	queryPlatformAndDeviceInfo();
 	printPlatformAndDeviceInfo();
 }
+
+void simpleCL_close() {
+	if (iCH->lastAddress != NULL && iCH->nextAddress != NULL) {
+		innerChainHandler currentChainAddress = iCH->nextAddress;
+		(*(currentChainAddress->p))();
+		while (currentChainAddress != iCH->lastAddress)
+		{
+			currentChainAddress = currentChainAddress->nextAddress;
+			(*(currentChainAddress->p))();
+		}
+	}
+}

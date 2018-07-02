@@ -39,7 +39,7 @@ typedef struct innerChainContainer *innerChainHandler;
 typedef struct simpleCLcontainer *simpleCLhandler;
 
 void            simpleCL_init ();
-void            simpleCL_close (simpleCLhandler handler);
+void            simpleCL_close ();
 
 extern simpleCLhandler mainCLHandler;
 extern innerChainHandler iCH;

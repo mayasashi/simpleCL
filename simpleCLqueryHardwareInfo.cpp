@@ -29,8 +29,13 @@ bool queryPlatformAndDeviceCallFlg;
 void cleanup();
 
 void registerCleanUpChain() {
+
 	innerChainHandler iCH_sub = (innerChainHandler)malloc(sizeof(_innerChainContainer));
+
 	iCH_sub->p = cleanup;
+	iCH_sub->nextAddress = NULL;
+	iCH_sub->lastAddress = NULL;
+
 	if (iCH->lastAddress != NULL) {
 		(iCH->lastAddress)->nextAddress = iCH_sub;
 	}
@@ -41,6 +46,7 @@ void registerCleanUpChain() {
 }
 
 void cleanup() {
+	printf("simpleCLqueryHardwareInfo's cleanup called.\n");
 	for (int i = 0; i < num_platform; i++)
 	{
 		for (int j = 0; j < num_device[i]; j++)
