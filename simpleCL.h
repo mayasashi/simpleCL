@@ -21,10 +21,22 @@
 #include "simpleCLqueryHardwareInfo.h"
 #include "simpleCLIOHardwareInfo.h"
 
-typedef struct simpleCLcontainer{
+typedef struct simpleCLcontainer {
 	cl_context     *   mainContext;
 	cl_platform_id *   mainPlatform;
 	cl_device_id   *   mainDevice;
+
+	/*platform_information*/
+	cl_uint            platform_index;
+	char           *   platform_name;
+	char           *   platform_vendor;
+
+	/*device_information*/
+	cl_uint            device_index;
+	char           *   device_name;
+	char           *   device_vendor;
+	cl_uint            device_uniqueID;
+
 }_simpleCLcontainer;
 
 typedef struct innerChainContainer *innerChainHandler;

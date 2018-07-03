@@ -9,4 +9,7 @@
 #pragma warning(disable:4996)  /*fopen*/
 #endif
 
+void readInfoFromConfigure();
+void writeInfoToConfigure();
+
 #endif  /*SIMPLECLIOHARDWAREINFO*/
