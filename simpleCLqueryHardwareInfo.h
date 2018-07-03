@@ -2,6 +2,7 @@
 #define SIMPLECLQUERYHARDWAREINFO
 
 #include "simpleCL.h"
+#include <cmath>
 
 #ifdef SIMPLECL_WIN
 #pragma warning(disable:4996)  /*fopen*/

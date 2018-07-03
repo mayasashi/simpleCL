@@ -1,20 +1,12 @@
 #ifndef SIMPLECL
 #define SIMPLECL
+
 #include <iostream>
+
+#ifndef __APPLE__
 #include <CL/opencl.h>
-
-#define SIMPLECL_NOTIFY_WIN
-
-#ifdef  SIMPLECL_NOTIFY_WIN
-#define SIMPLECL_WIN
-#elif   SIMPLECL_NOTIFY_MAC
-#define SIMPLECL_MAC
 #else
-#define SIMPLECL_PLATFORM_UNKNOWN
-#endif
-
-#ifdef  SIMPLECL_PLATFORM_UNKNOWN
-#error  simpleclmessage : Failed to identify which platform you use. If you're working on windows or mac platform, it's necessary to define the macro SIMPLECL_NOTIFY_WIN or SIMPLECL_NOTIFY_MAC respectively.'
+#include <OpenCL/opencl.h>
 #endif
 
 #ifndef FREESAFE_DEFINED

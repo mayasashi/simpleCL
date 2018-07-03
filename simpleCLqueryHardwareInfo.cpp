@@ -6,6 +6,8 @@ typedef struct innerChainContainer{
 	innerChainContainer *lastAddress;
 }_innerChainContainer;
 
+extern void registerFuncChain(void (*f)());
+
 cl_device_id **     device;
 cl_platform_id *    platform;
 cl_uint             num_platform, *num_device;
@@ -25,25 +27,6 @@ bool openclzeroplatform;
 bool openclzerodevice;
 
 bool queryPlatformAndDeviceCallFlg;
-
-void cleanup();
-
-void registerCleanUpChain() {
-
-	innerChainHandler iCH_sub = (innerChainHandler)malloc(sizeof(_innerChainContainer));
-
-	iCH_sub->p = cleanup;
-	iCH_sub->nextAddress = NULL;
-	iCH_sub->lastAddress = NULL;
-
-	if (iCH->lastAddress != NULL) {
-		(iCH->lastAddress)->nextAddress = iCH_sub;
-	}
-	else {
-		iCH->nextAddress = iCH_sub;
-	}
-	iCH->lastAddress = iCH_sub;
-}
 
 void cleanup() {
 	printf("simpleCLqueryHardwareInfo's cleanup called.\n");
@@ -86,7 +69,7 @@ void queryPlatformAndDevice()
 	
 	if (queryPlatformAndDeviceCallFlg == 0) {
 
-		registerCleanUpChain();
+		registerFuncChain(cleanup);
 		queryPlatformAndDeviceCallFlg = 1;
 
 		clGetPlatformIDs(0, NULL, &num_platform);
