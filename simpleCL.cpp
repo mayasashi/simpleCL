@@ -27,12 +27,17 @@ simpleCLhandler mainCLHandler;
 innerChainHandler iCH;
 
 void simpleCL_init() {
+
 	iCH = (innerChainHandler)malloc(sizeof(_innerChainContainer));
 	iCH->nextAddress = NULL;
 	iCH->lastAddress = NULL;
+
+	mainCLHandler = (simpleCLhandler)malloc(sizeof(_simpleCLcontainer));
+
 	queryPlatformAndDevice();
 	queryPlatformAndDeviceInfo();
 	printPlatformAndDeviceInfo();
+	selectMainPlatformAndDevice();
 }
 
 void simpleCL_close() {
@@ -45,4 +50,7 @@ void simpleCL_close() {
 			(*(currentChainAddress->p))();
 		}
 	}
+
+	FREE_SAFE(iCH);
+	FREE_SAFE(mainCLHandler);
 }

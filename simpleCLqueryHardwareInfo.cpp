@@ -170,34 +170,63 @@ void queryPlatformAndDeviceInfo() {
 
 void selectMainPlatformAndDevice() {
 	char buffer[33], *e;
-	unsigned int p_index, d_index;
+	unsigned long p_index, d_index;
+	bool confirmation_flg = 0;
 
-	/*platform*/
-	printf("Choose platform you want to use. (#lu~#lu) : ", 0, num_platform - 1);
-	fgets(buffer, 32, stdin);
-	p_index = strtoul(buffer, &e, 10);
-	while (isnan(p_index) != 0 || !(p_index >= 0 && p_index <= num_platform - 1)) {
-		printf("Invalid input. Please try again.\n");
-		printf("Choose platform you want to use. (#lu~#lu) : ", 0, num_platform - 1);
-		fgets(buffer, 32, stdin);
-		p_index = strtoul(buffer, &e, 10);
+	while (!confirmation_flg) {
+		/*platform*/
+		while (1) {
+			printf("Choose platform you want to use. (%lu~%lu) : ", 0, num_platform - 1);
+			fgets(buffer, 32, stdin);
+			p_index = strtoul(buffer, &e, 10);
+			if (p_index >= 0 && p_index <= num_platform - 1) break;
+			else printf("Invalid input. Please try again.\n");
+		}
+		printf("You've chosen the following platform : [%lu] %s\n", p_index, platform_name[p_index]);
+
+		/*device*/
+		while (1) {
+			printf("Choose device you want to use in the platform.  (%lu~%lu) : ", 0, num_device[p_index] - 1);
+			fgets(buffer, 32, stdin);
+			d_index = strtoul(buffer, &e, 10);
+			if (d_index >= 0 && d_index <= num_device[p_index] - 1) break;
+			else printf("Invalid input. Please try again.\n");
+		}
+		
+		printf("You've chosen the following device : [%lu] %s\n", d_index, device_name[p_index][d_index]);
+
+		/*confirmation*/
+		while (1) {
+			printf("Would you confirm? [y/n] : ");
+			fgets(buffer, 32, stdin);
+			if (strcmp(buffer, "y\n") == 0 || strcmp(buffer, "Y\n") == 0) {
+				printf("Y\n");
+
+				mainCLHandler->mainPlatform    = &platform[p_index];
+				mainCLHandler->mainDevice      = &device[p_index][d_index];
+
+				mainCLHandler->platform_index  = p_index;
+				mainCLHandler->platform_name   = platform_name[p_index];
+				mainCLHandler->platform_vendor = platform_vendor[p_index];
+
+				mainCLHandler->device_index    = d_index;
+				mainCLHandler->device_name     = device_name[p_index][d_index];
+				mainCLHandler->device_vendor   = device_vendor[p_index][d_index];
+				mainCLHandler->device_uniqueID = device_uniqueID[p_index][d_index];
+
+				confirmation_flg = 1;
+				break;
+			}
+			else if (strcmp(buffer, "n\n") == 0 || strcmp(buffer, "N\n") == 0) {
+				printf("N\n");
+				break;
+			}
+			else {
+				printf("Invalid input. Please try again.\n");
+			}
+		}
+		
 	}
-	printf("You've chosen the following platform : [%lu] %s\n", p_index, platform_name[p_index]);
-
-	/*device*/
-	printf("Choose device you want to use in the platform.  (#lu~#lu) : ", 0, num_device[p_index] - 1);
-	fgets(buffer, 32, stdin);
-	d_index = strtoul(buffer, &e, 10);
-	while (isnan(d_index) != 0 || !(d_index >= 0 && d_index <= num_device[p_index] - 1)) {
-		printf("Invalid input. Please try again.\n");
-		printf("Choose platform you want to use. (#lu~#lu) : ", 0, num_device[p_index] - 1);
-		fgets(buffer, 32, stdin);
-		p_index = strtoul(buffer, &e, 10);
-	}
-	printf("You've chosen the following device : [%lu] %s\n", d_index, device_name[p_index][d_index]);
-
-	/*confirmation*/
-	printf("Would you confirm? [y/n] : ");
 }
 
 void printPlatformAndDeviceInfo() {
