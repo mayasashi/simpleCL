@@ -20,6 +20,7 @@
 
 #include "simpleCLqueryHardwareInfo.h"
 #include "simpleCLIOHardwareInfo.h"
+#include "simpleCLenum.h"
 
 typedef struct simpleCLcontainer {
 	cl_context     *   mainContext;

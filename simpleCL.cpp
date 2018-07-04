@@ -37,7 +37,10 @@ void simpleCL_init() {
 	queryPlatformAndDevice();
 	queryPlatformAndDeviceInfo();
 	printPlatformAndDeviceInfo();
-	selectMainPlatformAndDevice();
+	if (readInfoFromConfigure() == SIMPLECL_LOAD_FAIL) {
+		selectMainPlatformAndDevice();
+		writeInfoToConfigure();
+	}
 }
 
 void simpleCL_close() {

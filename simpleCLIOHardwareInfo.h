@@ -9,7 +9,9 @@
 #pragma warning(disable:4996)  /*fopen*/
 #endif
 
-void readInfoFromConfigure();
-void writeInfoToConfigure();
+#include "simpleCLenum.h"
+
+simpleCLstandardEnum readInfoFromConfigure();
+simpleCLstandardEnum writeInfoToConfigure();
 
 #endif  /*SIMPLECLIOHARDWAREINFO*/
