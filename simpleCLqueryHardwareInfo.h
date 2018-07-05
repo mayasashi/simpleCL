@@ -15,6 +15,8 @@ void printPlatformAndDeviceInfo();
 
 void selectMainPlatformAndDevice();
 
+void setMainPlatformAndDevice();
+
 extern cl_device_id **     device;
 extern cl_platform_id *    platform;
 extern cl_uint             num_platform, *num_device;

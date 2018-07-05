@@ -176,7 +176,7 @@ void selectMainPlatformAndDevice() {
 	while (!confirmation_flg) {
 		/*platform*/
 		while (1) {
-			printf("Choose platform you want to use. (%lu~%lu) : ", 0, num_platform - 1);
+			printf("Choose platform you want to use. (%d~%u) : ", 0, num_platform - 1);
 			fgets(buffer, 32, stdin);
 			p_index = strtoul(buffer, &e, 10);
 			if (p_index >= 0 && p_index <= num_platform - 1) break;
@@ -186,7 +186,7 @@ void selectMainPlatformAndDevice() {
 
 		/*device*/
 		while (1) {
-			printf("Choose device you want to use in the platform.  (%lu~%lu) : ", 0, num_device[p_index] - 1);
+			printf("Choose device you want to use in the platform.  (%d~%u) : ", 0, num_device[p_index] - 1);
 			fgets(buffer, 32, stdin);
 			d_index = strtoul(buffer, &e, 10);
 			if (d_index >= 0 && d_index <= num_device[p_index] - 1) break;
@@ -227,6 +227,12 @@ void selectMainPlatformAndDevice() {
 		}
 		
 	}
+}
+void setMainPlatformAndDevice(){
+    mainCLHandler->mainPlatform = &platform[mainCLHandler->platform_index];
+    mainCLHandler->mainDevice   = &device[mainCLHandler->platform_index][mainCLHandler->device_index];
+    printf("Using Platform : %s\n",mainCLHandler->platform_name);
+    printf("Using Device   : %s  [ID : %u]\n",mainCLHandler->device_name,mainCLHandler->device_uniqueID);
 }
 
 void printPlatformAndDeviceInfo() {
@@ -272,6 +278,7 @@ void printPlatformAndDeviceInfo() {
 
 		/*Platform*/
 		printf("<PLATFORM_INFO>\n");
+        printf("\n");
 		for (int m = 0; m < 2 + (int)log10(num_platform) + 1; m++)
 		{
 			printf(" ");
@@ -298,7 +305,7 @@ void printPlatformAndDeviceInfo() {
 		printf("\n");
 		for (int i = 0; i < num_platform; i++)
 		{
-			printf("[%lu]", i);
+			printf("[%d]", i);
 			li = (i == 0) ? 0 : (int)log10(i);
 			for (int k = 0; k < (int)log10(num_platform) - li; k++)
 			{
@@ -340,8 +347,10 @@ void printPlatformAndDeviceInfo() {
 			}
 			printf("\n");*/
 		}
+        printf("\n");
 		/*device*/
 		printf("<DEVICE_INFO>\n");
+        printf("\n");
 		for (int m = 0; m < 4 + (int)log10(num_platform) + 1 + max_device_index_digit_length; m++) {
 			printf(" ");
 		}
@@ -373,7 +382,7 @@ void printPlatformAndDeviceInfo() {
 		{
 			for (int j = 0; j < num_device[i]; j++)
 			{
-				printf("[%lu][%lu]", i, j);
+				printf("[%d][%d]", i, j);
 				li = (i == 0) ? 0 : (int)log10(i);
 				lj = (j == 0) ? 0 : (int)log10(j);
 				for (int k = 0; k < (int)log10(num_platform) + max_device_index_digit_length - li - lj - 1; k++)
@@ -413,7 +422,7 @@ void printPlatformAndDeviceInfo() {
 				printf("|");
 				if (device_uniqueID[i][j] != 0)
 				{
-					printf("%lu", device_uniqueID[i][j]);
+					printf("%u", device_uniqueID[i][j]);
 					for (int k = 0; k < Max_dUs - (int)log10(device_uniqueID[i][j]) - 1; k++)
 					{
 						printf(" ");
@@ -449,6 +458,7 @@ void printPlatformAndDeviceInfo() {
 			}
 			printf("\n");
 		}
+        printf("\n");
 	}
 	else {
 		printf("WARNING (%s) : This function requires the queryPlatformAndDeviceInfo function to be called previously.\n", __func__);

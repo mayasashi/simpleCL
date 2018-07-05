@@ -41,6 +41,12 @@ void simpleCL_init() {
 		selectMainPlatformAndDevice();
 		writeInfoToConfigure();
 	}
+    setMainPlatformAndDevice();
+    cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,(cl_context_properties)*(mainCLHandler->mainPlatform),0};
+    mainCLHandler->mainContext = (cl_context *)malloc(sizeof(cl_context));
+    *(mainCLHandler->mainContext) = clCreateContext(properties, 1, mainCLHandler->mainDevice, NULL, NULL, NULL);
+    
+    
 }
 
 void simpleCL_close() {
@@ -53,7 +59,8 @@ void simpleCL_close() {
 			(*(currentChainAddress->p))();
 		}
 	}
-
+    clReleaseContext(*(mainCLHandler->mainContext));
+    FREE_SAFE(mainCLHandler->mainContext);
 	FREE_SAFE(iCH);
 	FREE_SAFE(mainCLHandler);
 }
