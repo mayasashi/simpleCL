@@ -26,41 +26,57 @@ void registerFuncChain(void (*f)()) {
 simpleCLhandler mainCLHandler;
 innerChainHandler iCH;
 
-void simpleCL_init() {
+bool simpleCLalreadySetFlg = 0;
 
-	iCH = (innerChainHandler)malloc(sizeof(_innerChainContainer));
-	iCH->nextAddress = NULL;
-	iCH->lastAddress = NULL;
+simpleCLhandler simpleCL_init() {
 
-	mainCLHandler = (simpleCLhandler)malloc(sizeof(_simpleCLcontainer));
-
-	queryPlatformAndDevice();
-	queryPlatformAndDeviceInfo();
-	printPlatformAndDeviceInfo();
-	if (readInfoFromConfigure() == SIMPLECL_LOAD_FAIL) {
-		selectMainPlatformAndDevice();
-		writeInfoToConfigure();
+	if (simpleCLalreadySetFlg) {
+		printf("SIMPLECL_WARNING (%s) : This function was used once for initialization.");
 	}
-    setMainPlatformAndDevice();
-    cl_context_properties properties[3] = {CL_CONTEXT_PLATFORM,(cl_context_properties)*(mainCLHandler->mainPlatform),0};
-    mainCLHandler->mainContext = (cl_context *)malloc(sizeof(cl_context));
-    *(mainCLHandler->mainContext) = clCreateContext(properties, 1, mainCLHandler->mainDevice, NULL, NULL, NULL);
-    
-    
+	else {
+		iCH = (innerChainHandler)malloc(sizeof(_innerChainContainer));
+		iCH->nextAddress = NULL;
+		iCH->lastAddress = NULL;
+
+		mainCLHandler = (simpleCLhandler)malloc(sizeof(_simpleCLcontainer));
+
+		queryPlatformAndDevice();
+		queryPlatformAndDeviceInfo();
+		printPlatformAndDeviceInfo();
+		if (readInfoFromConfigure() == SIMPLECL_LOAD_FAIL) {
+			selectMainPlatformAndDevice();
+			writeInfoToConfigure();
+		}
+		setMainPlatformAndDevice();
+		cl_context_properties properties[3] = { CL_CONTEXT_PLATFORM,(cl_context_properties)*(mainCLHandler->mainPlatform),0 };
+		mainCLHandler->mainContext = (cl_context *)malloc(sizeof(cl_context));
+		*(mainCLHandler->mainContext) = clCreateContext(properties, 1, mainCLHandler->mainDevice, NULL, NULL, NULL);
+
+		mainCLHandler->mainQueue = (cl_command_queue *)malloc(sizeof(cl_command_queue));
+		*(mainCLHandler->mainQueue) = clCreateCommandQueue(*(mainCLHandler->mainContext), *(mainCLHandler->mainDevice), 0, NULL);
+	}
+
+	return mainCLHandler;
 }
 
-void simpleCL_close() {
-	if (iCH->lastAddress != NULL && iCH->nextAddress != NULL) {
-		innerChainHandler currentChainAddress = iCH->nextAddress;
-		(*(currentChainAddress->p))();
-		while (currentChainAddress != iCH->lastAddress)
-		{
-			currentChainAddress = currentChainAddress->nextAddress;
-			(*(currentChainAddress->p))();
-		}
+void simpleCL_close(simpleCLhandler handler) {
+	if (handler != mainCLHandler)
+	{
+		printf("SIMPLECL_WARNING (%s) : Invalid argument. It seems that specified handler references incorrect data.");
 	}
-    clReleaseContext(*(mainCLHandler->mainContext));
-    FREE_SAFE(mainCLHandler->mainContext);
-	FREE_SAFE(iCH);
-	FREE_SAFE(mainCLHandler);
+	else {
+		if (iCH->lastAddress != NULL && iCH->nextAddress != NULL) {
+			innerChainHandler currentChainAddress = iCH->nextAddress;
+			(*(currentChainAddress->p))();
+			while (currentChainAddress != iCH->lastAddress)
+			{
+				currentChainAddress = currentChainAddress->nextAddress;
+				(*(currentChainAddress->p))();
+			}
+		}
+		clReleaseContext(*(mainCLHandler->mainContext));
+		FREE_SAFE(mainCLHandler->mainContext);
+		FREE_SAFE(iCH);
+		FREE_SAFE(mainCLHandler);
+	}
 }

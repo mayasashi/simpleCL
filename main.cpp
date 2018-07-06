@@ -17,8 +17,8 @@ int print()
 
 int main(int argc, const char **argv)
 {
-	simpleCL_init();
-	simpleCL_close();
-
+	simpleCLhandler s = simpleCL_init();
+	cl_mem buffer = clCreateBuffer(*(s->mainContext), CL_MEM_READ_WRITE, sizeof(float) * 512, NULL, NULL);
+	simpleCL_close(s);
 	return print();
 }

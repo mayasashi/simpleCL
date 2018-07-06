@@ -23,9 +23,11 @@
 #include "simpleCLenum.h"
 
 typedef struct simpleCLcontainer {
-	cl_context     *   mainContext;
-	cl_platform_id *   mainPlatform;
-	cl_device_id   *   mainDevice;
+	cl_context        * mainContext;
+	cl_platform_id    * mainPlatform;
+	cl_device_id      * mainDevice;
+	cl_command_queue  * mainQueue;
+
 
 	/*platform_information*/
 	cl_uint            platform_index;
@@ -44,8 +46,8 @@ typedef struct innerChainContainer *innerChainHandler;
 
 typedef struct simpleCLcontainer *simpleCLhandler;
 
-void            simpleCL_init ();
-void            simpleCL_close ();
+simpleCLhandler simpleCL_init ();
+void            simpleCL_close (simpleCLhandler handler);
 
 extern simpleCLhandler mainCLHandler;
 extern innerChainHandler iCH;
