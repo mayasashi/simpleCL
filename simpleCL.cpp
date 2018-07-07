@@ -28,7 +28,7 @@ innerChainHandler iCH;
 
 bool simpleCLalreadySetFlg = 0;
 
-simpleCLhandler simpleCL_init() {
+simpleCLhandler & simpleCL_init() {
 
 	if (simpleCLalreadySetFlg) {
 		printf("SIMPLECL_WARNING (%s) : This function was used once for initialization.");
@@ -43,23 +43,21 @@ simpleCLhandler simpleCL_init() {
 		queryPlatformAndDevice();
 		queryPlatformAndDeviceInfo();
 		printPlatformAndDeviceInfo();
-		if (readInfoFromConfigure() == SIMPLECL_LOAD_FAIL) {
-			selectMainPlatformAndDevice();
-			writeInfoToConfigure();
+		if (readInfoFromConfigure(mainCLHandler) == SIMPLECL_LOAD_FAIL) {
+			selectMainPlatformAndDevice(mainCLHandler);
+			writeInfoToConfigure(mainCLHandler);
 		}
-		setMainPlatformAndDevice();
-		cl_context_properties properties[3] = { CL_CONTEXT_PLATFORM,(cl_context_properties)*(mainCLHandler->mainPlatform),0 };
-		mainCLHandler->mainContext = (cl_context *)malloc(sizeof(cl_context));
-		*(mainCLHandler->mainContext) = clCreateContext(properties, 1, mainCLHandler->mainDevice, NULL, NULL, NULL);
+		setMainPlatformAndDevice(mainCLHandler);
+		cl_context_properties properties[3] = { CL_CONTEXT_PLATFORM,(cl_context_properties)(mainCLHandler->mainPlatform),0 };
+		mainCLHandler->mainContext = clCreateContext(properties, 1, &(mainCLHandler->mainDevice), NULL, NULL, NULL);
 
-		mainCLHandler->mainQueue = (cl_command_queue *)malloc(sizeof(cl_command_queue));
-		*(mainCLHandler->mainQueue) = clCreateCommandQueue(*(mainCLHandler->mainContext), *(mainCLHandler->mainDevice), 0, NULL);
+		mainCLHandler->mainQueue = clCreateCommandQueue(mainCLHandler->mainContext, mainCLHandler->mainDevice, 0, NULL);
 	}
 
 	return mainCLHandler;
 }
 
-void simpleCL_close(simpleCLhandler handler) {
+void simpleCL_close(simpleCLhandler &handler) {
 	if (handler != mainCLHandler)
 	{
 		printf("SIMPLECL_WARNING (%s) : Invalid argument. It seems that specified handler references incorrect data.");
@@ -74,9 +72,11 @@ void simpleCL_close(simpleCLhandler handler) {
 				(*(currentChainAddress->p))();
 			}
 		}
-		clReleaseContext(*(mainCLHandler->mainContext));
-		FREE_SAFE(mainCLHandler->mainContext);
+		
+		clReleaseCommandQueue(handler->mainQueue);
+		clReleaseContext(handler->mainContext);
+		
 		FREE_SAFE(iCH);
-		FREE_SAFE(mainCLHandler);
+		FREE_SAFE(handler);
 	}
 }
