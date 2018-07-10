@@ -4,7 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <varargs.h>
+#include <fstream>
+//#include <varargs.h>
 
 #ifndef __APPLE__
 #include <CL/opencl.h>
@@ -30,8 +31,9 @@ struct kernelHandler {
 	kernelHandler();
 	~kernelHandler();
 
-	void addKernel(const char *path, const char *name);
-	
+	void addKernelProgram(const char *path, const char *name);
+    void loadProgramFile();
+    void buildProgram();
 };
 
 #endif  /*SIMPLECLHEADERGENERATE*/

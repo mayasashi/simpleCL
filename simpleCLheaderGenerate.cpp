@@ -4,6 +4,7 @@ struct kernel_t {
 	FILE *file;
 	char *path;
 	char *name;
+    char *data;
 	int   buildflg;
 
 	/*constructor and destructor*/
@@ -23,10 +24,12 @@ kernel_t::~kernel_t() {
 	FREE_SAFE(name);
 }
 
-std::vector<kernel_t*> *mainKernelVec = NULL;
+typedef std::vector<kernel_t*> kernel_vec;
+
+kernel_vec *mainKernelVec = NULL;
 
 struct kernelContainer {
-	std::vector<kernel_t*> *kernelVec;
+	kernel_vec *kernelVec;
 	kernelContainer() {
 		printf("constructor called.\n");
 		if (mainKernelVec == NULL)
@@ -50,6 +53,20 @@ kernelHandler::~kernelHandler() {
 }
 
 
-void kernelHandler::addKernel(const char *path, const char *name) {
-	
+void kernelHandler::addKernelProgram(const char *path, const char *name) {
+    mainKernelVec->push_back(new kernel_t(path,name));
+}
+
+void kernelHandler::loadProgramFile(){
+    long size;
+    kernel_vec::iterator itr;
+    for(itr = mainKernelVec->begin(); itr < mainKernelVec->end(); itr++){
+        (*itr)->file = fopen((*itr)->path, "r");
+        fseek((*itr)->file, 0L, SEEK_END);
+        size = ftell((*itr)->file);
+        rewind((*itr)->file);
+        (*itr)->data = (char *)malloc(size);
+        
+    }
+    
 }
