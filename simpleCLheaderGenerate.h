@@ -17,7 +17,7 @@
 #pragma warning(disable:4996)
 #endif
 
-#include "simpleCLtypes.h"
+#include "simpleCL.h"
 
 struct kernel_t;
 
@@ -33,7 +33,7 @@ struct kernelHandler {
 
 	void addKernelProgram(const char *path, const char *name);
     void loadProgramFile();
-    void buildProgram();
+    void buildProgram(simpleCLhandler handler);
 };
 
 #endif  /*SIMPLECLHEADERGENERATE*/
