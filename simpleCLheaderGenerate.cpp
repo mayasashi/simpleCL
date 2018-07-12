@@ -36,6 +36,7 @@ kernel_t::~kernel_t() {
 	FREE_SAFE(path);
 	FREE_SAFE(name);
     FREE_SAFE(data);
+	FREE_SAFE(buildInfoLog);
 }
 
 typedef std::vector<kernel_t*> kernel_vec;
@@ -48,12 +49,23 @@ struct kernelContainer {
 		printf("constructor called.\n");
 		if (mainKernelVec == NULL)
 		{
-			mainKernelVec = (std::vector<kernel_t*> *)malloc(sizeof(std::vector<kernel_t*>));
+			mainKernelVec = (kernel_vec *)malloc(sizeof(kernel_vec));
 		}
 		kernelVec = mainKernelVec;
 	}
 	~kernelContainer() {
 		printf("destructor called.\n");
+		if (mainKernelVec->empty() == false) {
+			for (
+				kernel_vec::iterator itr = mainKernelVec->begin();
+				itr < mainKernelVec->end();
+				itr++
+				)
+			{
+				if (*itr != NULL) delete *itr;
+			}
+			mainKernelVec->clear();
+		}
 		FREE_SAFE(mainKernelVec);
 	}
 };
@@ -104,6 +116,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
         itr < mainKernelVec->end();
         itr++)
     {
+		/*1:Create OpenCL program object.*/
         (*itr)->program = clCreateProgramWithSource(
 			handler->mainContext,                    /*main context*/                    
 			1,                                       /*count*/
@@ -112,6 +125,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
             NULL									 /*error code*/
 		);                                   
         
+		/*2 : Build OpenCL program.*/
         clBuildProgram(
 			(*itr)->program,        /*program*/
 			1,                      /*num_devices*/
@@ -121,6 +135,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
 			NULL                    /*user_data*/
 		);
 
+		/*3 : Check whether OpenCL program was built successfully.*/
 		clGetProgramBuildInfo(
 			(*itr)->program,          /*program*/
 			handler->mainDevice,      /*device*/
@@ -130,6 +145,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
 			NULL                      /*param_value_size_ret*/
 		);
 
+		/*4 : if an error occurred during OpenCL program compilation. Obtain build info log from specified device.*/
 		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)-> buildStatus != CL_BUILD_NONE)
 		{
 			clGetProgramBuildInfo(
@@ -154,6 +170,21 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
 			}
 		}
     }
-    
-    
+}
+
+void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
+	printf("<PROGRAM BUILD_INFO>\n\n");
+	printf("Compile Device Used : %s\n\n", handler->device_name);
+	for (
+		kernel_vec::iterator itr = mainKernelVec->begin();
+		itr < mainKernelVec->end();
+		itr++
+		)
+	{
+			printf("	[NAME : %s]\n", (*itr)->name);
+			printf("BuildStatus : %d\n", (*itr)->buildStatus);
+		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)->buildStatus != CL_BUILD_NONE) {
+			printf("(BuildLog)\n%s\n", (*itr)->buildInfoLog);
+		}
+	}
 }

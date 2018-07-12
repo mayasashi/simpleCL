@@ -34,6 +34,8 @@ struct kernelHandler {
 	void addKernelProgram(const char *path, const char *name);
     void loadProgramFile();
     void buildProgram(simpleCLhandler handler);
+	void printProgramBuildInfo(simpleCLhandler handler);
+	void generateHeaderString();
 };
 
 #endif  /*SIMPLECLHEADERGENERATE*/
