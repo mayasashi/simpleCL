@@ -6,6 +6,9 @@ typedef struct innerChainContainer {
 	innerChainContainer *lastAddress;
 }_innerChainContainer;
 
+simpleCLhandler mainCLHandler;
+innerChainHandler iCH;
+
 void registerFuncChain(void (*f)()) {
     
     innerChainHandler iCH_sub = (innerChainHandler)malloc(sizeof(_innerChainContainer));
@@ -23,8 +26,7 @@ void registerFuncChain(void (*f)()) {
     iCH->lastAddress = iCH_sub;
 }
 
-simpleCLhandler mainCLHandler;
-innerChainHandler iCH;
+
 
 bool simpleCLalreadySetFlg = 0;
 

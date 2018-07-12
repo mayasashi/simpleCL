@@ -8,7 +8,10 @@ struct kernel_t {
 	char *name;
     char *data;
     long  data_length;
-	int   buildflg;
+
+	cl_build_status buildStatus;
+	char         *  buildInfoLog;
+	size_t          buildInfoLogLength;
     
     
     /*opencl variables*/
@@ -26,7 +29,7 @@ kernel_t::kernel_t(const char *arg_path, const char *arg_name) {
 	path = (char *)malloc(sizeof(char)*(arg_path_length + 1));
 	name = (char *)malloc(sizeof(char)*(arg_name_length + 1));
     data = NULL;
-    buildflg = 0;
+    buildStatus = 0;
 }
 
 kernel_t::~kernel_t() {
@@ -101,13 +104,55 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
         itr < mainKernelVec->end();
         itr++)
     {
-        (*itr)->program = clCreateProgramWithSource(handler->mainContext,                    /*main context*/
-                                                    1,                                       /*count*/
-                                                    (const char **)&((*itr)->data),          /*data pointer*/
-                                                    (const size_t *)&((*itr)->data_length),  /*data length pointer*/
-                                                    NULL);                                   /*error code*/
+        (*itr)->program = clCreateProgramWithSource(
+			handler->mainContext,                    /*main context*/                    
+			1,                                       /*count*/
+			(const char **)&((*itr)->data),          /*data pointer*/
+			(const size_t *)&((*itr)->data_length),  /*data length pointer*/
+            NULL									 /*error code*/
+		);                                   
         
-        clBuildProgram((*itr)->program, 1, &handler->mainDevice, "", NULL, NULL);
+        clBuildProgram(
+			(*itr)->program,        /*program*/
+			1,                      /*num_devices*/
+			&handler->mainDevice,   /*device_list*/
+			"",                     /*options*/
+			NULL,                   /*pfn_notify*/
+			NULL                    /*user_data*/
+		);
+
+		clGetProgramBuildInfo(
+			(*itr)->program,          /*program*/
+			handler->mainDevice,      /*device*/
+			CL_PROGRAM_BUILD_STATUS,  /*build_info*/
+			sizeof(cl_build_status),  /*param_value_size*/
+			&((*itr)->buildStatus),   /*param_value*/
+			NULL                      /*param_value_size_ret*/
+		);
+
+		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)-> buildStatus != CL_BUILD_NONE)
+		{
+			clGetProgramBuildInfo(
+				(*itr)->program,					/*program*/
+				handler->mainDevice,				/*device*/
+				CL_PROGRAM_BUILD_LOG,				/*build_info*/
+				0,									/*param_value_size*/
+				NULL,								/*param_value*/
+				&((*itr)->buildInfoLogLength)		/*param_value_size_ret*/
+			);
+			if ((*itr)->buildInfoLogLength > 1)
+			{
+				(*itr)->buildInfoLog = (char *)malloc((*itr)->buildInfoLogLength);
+				clGetProgramBuildInfo(
+					(*itr)->program,				/*program*/
+					handler->mainDevice,			/*device*/
+					CL_PROGRAM_BUILD_LOG,			/*build_info*/
+					(*itr)->buildInfoLogLength,		/*param_value_size*/
+					(*itr)->buildInfoLog,			/*param_value*/
+					NULL							/*param_value_size_ret*/
+				);
+			}
+		}
     }
     
     

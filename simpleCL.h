@@ -20,7 +20,4 @@
 simpleCLhandler & simpleCL_init ();
 void              simpleCL_close (simpleCLhandler &handler);
 
-extern simpleCLhandler mainCLHandler;
-extern innerChainHandler iCH;
-
 #endif  /*SIMPLECL*/
