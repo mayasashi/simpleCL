@@ -188,3 +188,17 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 		}
 	}
 }
+
+void kernelHandler::generateHeaderString(){
+    /*1 : check whether all programs are built successfully. Otherwise abort the process.*/
+    for
+        (
+         kernel_vec::iterator itr = mainKernelVec->begin();
+         itr < mainKernelVec->end();
+         itr++
+        )
+    {
+        (*itr)->program
+    }
+    
+}
