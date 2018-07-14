@@ -3,19 +3,19 @@
 struct kernel_t {
     
     /*standard variables*/
-	FILE *file;
-	char *path;
-	char *name;
-    char *data;
-    long  data_length;
+	FILE *file;				/*File pointer*/
+	char *path;				/*File path of the kernel file*/
+	char *name;				/*Name used to specify the kernel file*/
+    char *data;				/*Char pointer to actual data in memory*/
+    long  data_length;		/*Length of actual data in memory*/
 
-	cl_build_status buildStatus;
-	char         *  buildInfoLog;
-	size_t          buildInfoLogLength;
+	cl_build_status buildStatus;			/*Program build status*/
+	char         *  buildInfoLog;			/*Program build info log returned when a program compilation fails*/
+	size_t          buildInfoLogLength;		/*Length of build info log*/
     
     
     /*opencl variables*/
-    cl_program program;
+    cl_program program;						
 
 	/*constructor and destructor*/
 	kernel_t(const char *arg_path, const char *arg_name);
@@ -88,21 +88,21 @@ void kernelHandler::loadProgramFile(){
     
     for(itr = mainKernelVec->begin(); itr < mainKernelVec->end(); itr++){
         
-      /*1:opening a file*/
+      /*1:Open a kernel file*/
         
         (*itr)->file = fopen((*itr)->path, "r");
         
-      /*2:obtain the file size*/
+      /*2:Obtain the file size*/
         
         fseek((*itr)->file, 0L, SEEK_END);
         (*itr)->data_length = ftell((*itr)->file);
         rewind((*itr)->file);
         
-      /*3:allocate memory for data storage*/
+      /*3:Allocate memory to store the kernel data*/
         
         (*itr)->data = (char *)malloc((*itr)->data_length);
         
-      /*4:load data*/
+      /*4:Load data*/
         
         for(int i = 0; i < (*itr)->data_length; i++)
         {
@@ -112,11 +112,13 @@ void kernelHandler::loadProgramFile(){
 }
 
 void kernelHandler::buildProgram(simpleCLhandler handler){
-    for(kernel_vec::iterator itr = mainKernelVec->begin();
+    for(
+		kernel_vec::iterator itr = mainKernelVec->begin();
         itr < mainKernelVec->end();
-        itr++)
+        itr++
+		)
     {
-		/*1:Create OpenCL program object.*/
+		/*1:Create OpenCL program objects.*/
         (*itr)->program = clCreateProgramWithSource(
 			handler->mainContext,                    /*main context*/                    
 			1,                                       /*count*/
@@ -125,7 +127,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
             NULL									 /*error code*/
 		);                                   
         
-		/*2 : Build OpenCL program.*/
+		/*2 : Build OpenCL programs.*/
         clBuildProgram(
 			(*itr)->program,        /*program*/
 			1,                      /*num_devices*/
@@ -135,7 +137,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
 			NULL                    /*user_data*/
 		);
 
-		/*3 : Check whether OpenCL program was built successfully.*/
+		/*3 : Check whether the OpenCL programs were built successfully.*/
 		clGetProgramBuildInfo(
 			(*itr)->program,          /*program*/
 			handler->mainDevice,      /*device*/
@@ -145,7 +147,7 @@ void kernelHandler::buildProgram(simpleCLhandler handler){
 			NULL                      /*param_value_size_ret*/
 		);
 
-		/*4 : if an error occurred during OpenCL program compilation. Obtain build info log from specified device.*/
+		/*4 : If an error occurred during the OpenCL program compilation, obtain a build info log from the specified device.*/
 		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)-> buildStatus != CL_BUILD_NONE)
 		{
 			clGetProgramBuildInfo(
@@ -190,15 +192,43 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 }
 
 void kernelHandler::generateHeaderString(){
-    /*1 : check whether all programs are built successfully. Otherwise abort the process.*/
+
+	bool buildCheckFlg = 0;
+
+    /*1 : Check whether all programs are built successfully. Otherwise abort the following process.*/
     for
         (
          kernel_vec::iterator itr = mainKernelVec->begin();
-         itr < mainKernelVec->end();
+         itr < mainKernelVec->end() && !buildCheckFlg;
          itr++
         )
     {
-        (*itr)->program
+		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)->buildStatus != CL_BUILD_NONE)
+		{
+			buildCheckFlg = true;
+		}
     }
+
+	if (buildCheckFlg) {
+		printf("SIMPLECLHEADERGENERATE (%s) : There's at least one program that was not built successfully. Aborting the process.\n");
+	}
+	else {
+		/*2: Search kernel functions in the kernel file.*/
+		
+		
+		
+		for (
+			kernel_vec::iterator itr = mainKernelVec->begin();
+			itr < mainKernelVec->end();
+			itr++
+			)
+		{
+			/* Search in the order of "kernel(__kernel)", "void" and "function name". */
+			for (long i = 0; i < (*itr)->data_length; i++)
+			{
+				
+			}
+		}
+	}
     
 }
