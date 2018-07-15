@@ -18,6 +18,7 @@
 #endif
 
 #include "simpleCL.h"
+#include "findString.h"
 
 struct kernel_t;
 

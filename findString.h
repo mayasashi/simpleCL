@@ -3,8 +3,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
-int findString(char A[], const char *a,unsigned int index)
+unsigned int findString(char A[], const char *a,unsigned int index,unsigned int *next_index_ret, void (*customFunc)(char,unsigned int))
 {
 	unsigned int a_size = strlen(a);
 	int foundFlg = 0;
@@ -13,6 +14,22 @@ int findString(char A[], const char *a,unsigned int index)
 	unsigned long i;
 	unsigned long k;
 
+	/*NULLptr check*/
+	if (a == NULL || A == NULL) {
+		printf("ERROR_FINDSTRING : A nullptr argument is not allowed.\n");
+		return 0;
+	}
+
+	/*Checking whether the number of characters in the target string is sufficient.*/
+	for (unsigned int l = 0;l < a_size;l++)
+	{
+		if (A[index + l] == 0 || A[index + l] == -1) {
+			printf("NOTE_FINDSTRING : The number of characters in the target string is lower than those in the search term.\n");
+			return 0;
+		}
+	}
+
+	/*Search loop*/
 	for (
 		i = 0;
 			!foundFlg &&
@@ -24,6 +41,8 @@ int findString(char A[], const char *a,unsigned int index)
 		u = A[index + i];
 		v = A[index + i + a_size - 1];
 		k = 0;
+
+		if(customFunc != NULL) (*customFunc)(u,i);
 
 		printf("String : ");
 		for (unsigned long l = 0; l < a_size; l++)
@@ -48,7 +67,11 @@ int findString(char A[], const char *a,unsigned int index)
 		}
 	}
 
-	return (foundFlg) ? i - 1 : -1;
+	if (next_index_ret != NULL && foundFlg) {
+		*next_index_ret = i;
+	}
+
+	return (foundFlg) ? i : 0;
 
 }
 

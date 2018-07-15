@@ -40,6 +40,7 @@ kernel_t::~kernel_t() {
 }
 
 typedef std::vector<kernel_t*> kernel_vec;
+bool *globalFlgReg = NULL;
 
 kernel_vec *mainKernelVec = NULL;   /*Main kernel vector object*/
 
@@ -69,6 +70,8 @@ struct kernelContainer {
 		FREE_SAFE(mainKernelVec);
 	}
 };
+
+void quotationQuery(char A, unsigned int i);
 
 kernelHandler::kernelHandler(){
 	ptr = new kernelContainer;
@@ -194,6 +197,9 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 void kernelHandler::generateHeaderString(){
 
 	bool buildCheckFlg = 0;
+	bool quotationFlg = false;
+
+	globalFlgReg = &quotationFlg;		//register the local quotation flg
 
     /*1 : Check whether all programs are built successfully. Otherwise abort the following process.*/
     for
@@ -215,7 +221,7 @@ void kernelHandler::generateHeaderString(){
 	else {
 		/*2: Search kernel functions in the kernel file.*/
 		
-		
+		unsigned int searchIndex = 0;
 		
 		for (
 			kernel_vec::iterator itr = mainKernelVec->begin();
@@ -224,11 +230,32 @@ void kernelHandler::generateHeaderString(){
 			)
 		{
 			/* Search in the order of "kernel(__kernel)", "void" and "function name". */
-			for (long i = 0; i < (*itr)->data_length; i++)
+			if (findString((*itr)->data, "kernel", searchIndex, &searchIndex,quotationQuery) != 0)
 			{
-				
+				if (
+					searchIndex == 1 ||
+					((*itr)->data)[searchIndex]
+					)
+				{
+
+				}
 			}
 		}
 	}
-    
+
+	globalFlgReg = NULL;
+}
+
+void quotationQuery(char A, unsigned int i)
+{
+	if (globalFlgReg == NULL) {
+		printf("ERROR_quotationQuery : globalFlgReg pointing null ptr.\n");
+	}
+	else {
+		bool & q_flg = *globalFlgReg;
+
+		if (A == '"' && q_flg) q_flg = false;
+		if (A == '"' && !q_flg) q_flg = true;
+
+	}
 }
