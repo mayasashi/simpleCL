@@ -40,7 +40,10 @@ kernel_t::~kernel_t() {
 }
 
 typedef std::vector<kernel_t*> kernel_vec;
-bool *globalFlgReg = NULL;
+
+bool quotationFlg = false;
+bool comment1Flg = false;
+bool comment2Flg = false;
 
 kernel_vec *mainKernelVec = NULL;   /*Main kernel vector object*/
 
@@ -71,7 +74,8 @@ struct kernelContainer {
 	}
 };
 
-void quotationQuery(char A, unsigned int i);
+void quotationCommentQuery(char u, char w,unsigned int i);
+inline bool variableCharFlg(char c);
 
 kernelHandler::kernelHandler(){
 	ptr = new kernelContainer;
@@ -196,26 +200,24 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 
 void kernelHandler::generateHeaderString(){
 
-	bool buildCheckFlg = 0;
-	bool quotationFlg = false;
+	bool buildSuccessFlg = true;
 
-	globalFlgReg = &quotationFlg;		//register the local quotation flg
+	quotationFlg = false;
+	comment1Flg = false;
+	comment2Flg = false;
 
     /*1 : Check whether all programs are built successfully. Otherwise abort the following process.*/
     for
         (
          kernel_vec::iterator itr = mainKernelVec->begin();
-         itr < mainKernelVec->end() && !buildCheckFlg;
+         itr < mainKernelVec->end() && buildSuccessFlg;
          itr++
         )
     {
-		if ((*itr)->buildStatus != CL_BUILD_SUCCESS && (*itr)->buildStatus != CL_BUILD_NONE)
-		{
-			buildCheckFlg = true;
-		}
+		buildSuccessFlg *= ((*itr)->buildStatus == CL_BUILD_SUCCESS);
     }
 
-	if (buildCheckFlg) {
+	if (!buildSuccessFlg) {
 		printf("SIMPLECLHEADERGENERATE (%s) : There's at least one program that was not built successfully. Aborting the process.\n");
 	}
 	else {
@@ -230,32 +232,63 @@ void kernelHandler::generateHeaderString(){
 			)
 		{
 			/* Search in the order of "kernel(__kernel)", "void" and "function name". */
-			if (findString((*itr)->data, "kernel", searchIndex, &searchIndex,quotationQuery) != 0)
+
+			/*
+			if (
+				findString((*itr)->data, "kernel", searchIndex, &searchIndex,quotationCommentQuery) != 0 &&
+				!quotationFlg && !comment1Flg && !comment2Flg
+				)
 			{
-				if (
-					searchIndex == 1 ||
-					((*itr)->data)[searchIndex]
+				if ((searchIndex == 1 && 
+					!variableCharFlg(((*itr)->data)[6]))
+
+					|| 
+
+					(searchIndex != 1 &&
+					!variableCharFlg(((*itr)->data)[searchIndex - 2]) &&
+					!variableCharFlg(((*itr)->data)[searchIndex + 5]))
 					)
 				{
-
+					printf("Characters \"kernel\" found\n");
 				}
 			}
+
+			if (
+				findString((*itr)->data, "void", searchIndex, &searchIndex, quotationCommentQuery) != 0 &&
+				!quotationFlg && !comment1Flg && !comment2Flg
+				)
+			{
+				if ((searchIndex == 1 &&
+					!variableCharFlg(((*itr)->data)[4]))
+
+					||
+
+					(searchIndex != 1 &&
+						!variableCharFlg(((*itr)->data)[searchIndex - 2]) &&
+						!variableCharFlg(((*itr)->data)[searchIndex + 3]))
+					)
+				{
+					printf("Characters \"void\" found\n");
+				}
+			}
+			*/
 		}
 	}
-
-	globalFlgReg = NULL;
 }
 
-void quotationQuery(char A, unsigned int i)
+void quotationCommentQuery(char u, char w,unsigned int i)
 {
-	if (globalFlgReg == NULL) {
-		printf("ERROR_quotationQuery : globalFlgReg pointing null ptr.\n");
-	}
-	else {
-		bool & q_flg = *globalFlgReg;
+	if (u == '"' && !quotationFlg && !comment1Flg && !comment2Flg) quotationFlg = true;
+	if (u == '"' && w != '\\' && quotationFlg) quotationFlg = false;
 
-		if (A == '"' && q_flg) q_flg = false;
-		if (A == '"' && !q_flg) q_flg = true;
+	if (u == '/' && w == '/' && !quotationFlg && !comment2Flg) comment1Flg = true;
+	if (u == '\n' && comment1Flg) comment1Flg = false;
 
-	}
+	if (u == '*' && w == '/' && !quotationFlg && !comment1Flg) comment2Flg = true;
+	if (u == '/' && w == '*' && comment2Flg) comment2Flg = false;
+}
+
+inline bool variableCharFlg(char c)
+{
+	return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_');
 }
