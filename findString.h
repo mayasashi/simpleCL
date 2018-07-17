@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-unsigned int findString
+static unsigned int findString
 (
 	const char A[], 
 	const char *a, 
@@ -76,6 +76,9 @@ unsigned int findString
 			if (2 * k > a_size - 1) foundFlg = 1;
 		}
 	}
+    if(foundFlg){
+        printf("findString Find \"%s\" at index %lu\n",a,index + i - 1);
+    }
 
 	if (next_index_ret != NULL && foundFlg) {
 		*next_index_ret = index + i;
@@ -85,7 +88,7 @@ unsigned int findString
 
 }
 
-unsigned int findTwoStringsWithSpace
+static unsigned int findTwoStringsWithSpace
 (
 	const char A[], 
 	const char *a1, 
@@ -122,7 +125,7 @@ unsigned int findTwoStringsWithSpace
 		
 		if (onlySpaceHTflg) {
 			printf("NOTE_FINDTWOSTRINGSWITHSPACE : found\n");
-			foundFlg == true;
+			foundFlg = true;
 		}
 	}
 	
@@ -131,6 +134,5 @@ unsigned int findTwoStringsWithSpace
 	return (foundFlg) ? a1_index : 0;
 
 }
-
 
 #endif		/*FINDSTRING*/

@@ -1,5 +1,13 @@
 #include "simpleCLheaderGenerate.h"
 
+
+struct fStr{
+    char *              funcName;
+    size_t              funcName_Length;
+    std::vector<char *> argument_name;
+    std::vector<char *> argument_data;
+};
+
 struct kernel_t {
     
     /*standard variables*/
@@ -12,6 +20,8 @@ struct kernel_t {
 	cl_build_status buildStatus;			/*Program build status*/
 	char         *  buildInfoLog;			/*Program build info log returned when a program compilation fails*/
 	size_t          buildInfoLogLength;		/*Length of build info log*/
+    
+    std::vector<fStr *> funcVector;
     
     
     /*opencl variables*/
@@ -232,46 +242,31 @@ void kernelHandler::generateHeaderString(){
 			)
 		{
 			/* Search in the order of "kernel(__kernel)", "void" and "function name". */
-
-			/*
-			if (
-				findString((*itr)->data, "kernel", searchIndex, &searchIndex,quotationCommentQuery) != 0 &&
-				!quotationFlg && !comment1Flg && !comment2Flg
-				)
-			{
-				if ((searchIndex == 1 && 
-					!variableCharFlg(((*itr)->data)[6]))
-
-					|| 
-
-					(searchIndex != 1 &&
-					!variableCharFlg(((*itr)->data)[searchIndex - 2]) &&
-					!variableCharFlg(((*itr)->data)[searchIndex + 5]))
-					)
-				{
-					printf("Characters \"kernel\" found\n");
-				}
-			}
-
-			if (
-				findString((*itr)->data, "void", searchIndex, &searchIndex, quotationCommentQuery) != 0 &&
-				!quotationFlg && !comment1Flg && !comment2Flg
-				)
-			{
-				if ((searchIndex == 1 &&
-					!variableCharFlg(((*itr)->data)[4]))
-
-					||
-
-					(searchIndex != 1 &&
-						!variableCharFlg(((*itr)->data)[searchIndex - 2]) &&
-						!variableCharFlg(((*itr)->data)[searchIndex + 3]))
-					)
-				{
-					printf("Characters \"void\" found\n");
-				}
-			}
-			*/
+            while(findTwoStringsWithSpace(
+                                          (*itr)->data,
+                                          "kernel",
+                                          "void",
+                                          searchIndex,
+                                          &searchIndex,
+                                          quotationCommentQuery
+                                          ) != 0
+                  )
+            {
+                /*if we find the characters "kernel void" */
+                
+                if(!quotationFlg && !comment1Flg && !comment2Flg){
+                    while(((*itr)->data)[searchIndex] == ' ' || ((*itr)->data)[searchIndex] == '\t'){
+                        searchIndex++;
+                    }
+                    
+                    ((*itr)->funcVector).push_back(new fStr);
+                    fStr *st = ((*itr)->funcVector).back();
+                    
+                    while(((*itr)->data)[searchIndex] == '('){
+                        searchIndex++;
+                    }
+                }
+            }
 		}
 	}
 }
