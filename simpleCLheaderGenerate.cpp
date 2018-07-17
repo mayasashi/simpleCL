@@ -259,12 +259,22 @@ void kernelHandler::generateHeaderString(){
                         searchIndex++;
                     }
                     
+                    /*Now we can obtain the name of the function*/
+                    
                     ((*itr)->funcVector).push_back(new fStr);
+                    
                     fStr *st = ((*itr)->funcVector).back();
+                    
+                    st->funcName = &((*itr)->data)[searchIndex];
+                    st->funcName_Length = 1;
                     
                     while(((*itr)->data)[searchIndex] == '('){
                         searchIndex++;
+                        (st->funcName_Length)++;
                     }
+                    
+                    
+                    
                 }
             }
 		}
