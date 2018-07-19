@@ -7,8 +7,10 @@
 
 static unsigned int findString
 (
-	const char A[], 
-	const char *a, 
+	const char A[],
+	const char *a,
+	const char *endCharArray,
+	unsigned int endCharArray_num,
 	unsigned int index, 
 	unsigned int *next_index_ret, 
 	void(*customFunc)(char, char, unsigned int)
@@ -22,6 +24,8 @@ static unsigned int findString
 	unsigned long i;
 	unsigned long k;
 
+	bool endCharCapturedFlg = false;
+
 	/*NULLptr check*/
 	if (a == NULL || A == NULL) {
 		printf("ERROR_FINDSTRING : A nullptr argument is not allowed.\n");
@@ -29,11 +33,15 @@ static unsigned int findString
 	}
 
 	/*Checking whether the number of characters in the target string is sufficient.*/
-	for (unsigned int l = 0; l < a_size; l++)
+	for (unsigned int l = 0; l < a_size && !endCharCapturedFlg; l++)
 	{
 		if (A[index + l] == 0 || A[index + l] == -1) {
 			printf("NOTE_FINDSTRING : The number of characters in the target string is lower than those in the search term.\n");
 			return 0;
+		}
+		for (unsigned int m = 0; m < endCharArray_num && endCharArray != NULL && !endCharCapturedFlg; m++)
+		{
+			endCharCapturedFlg += (A[index + l] == endCharArray[m]);
 		}
 	}
 
@@ -42,7 +50,8 @@ static unsigned int findString
 		i = 0;
 		!foundFlg &&
 		A[index + i + a_size - 1] != 0 &&
-		A[index + i + a_size - 1] != -1;
+		A[index + i + a_size - 1] != -1 &&
+		!endCharCapturedFlg;
 		i++
 		)
 	{
@@ -61,7 +70,12 @@ static unsigned int findString
 		}
 		printf("\n");
 
-		while (!foundFlg && u == a[k] && v == a[a_size - 1 - k])
+		for (unsigned int m = 0; m < endCharArray_num && endCharArray != NULL && !endCharCapturedFlg; m++) {
+			endCharCapturedFlg += (A[index + i + a_size - 1] == endCharArray[m]);
+		}
+		
+
+		while (!endCharCapturedFlg && !foundFlg && u == a[k] && v == a[a_size - 1 - k])
 		{
 			k++;
 			u = A[index + i + k];
@@ -93,6 +107,8 @@ static unsigned int findTwoStringsWithSpace
 	const char A[], 
 	const char *a1, 
 	const char *a2, 
+	const char *endCharArray,
+	unsigned int endCharArray_num,
 	unsigned int index, 
 	unsigned int *next_index_ret, 
 	void (*customFunc)(char,char,unsigned int)
@@ -108,8 +124,8 @@ static unsigned int findTwoStringsWithSpace
 	bool onlySpaceHTflg = true;
 	while (
 		!foundFlg &&
-		findString(A, a1, a2_index, &a1_index, customFunc) != 0 &&      /*Search a1*/
-		findString(A, a2, a1_index, &a2_index, customFunc) != 0         /*Search a2*/
+		findString(A, a1, endCharArray, endCharArray_num, a2_index, &a1_index, customFunc) != 0 &&      /*Search a1*/
+		findString(A, a2, endCharArray, endCharArray_num, a1_index, &a2_index, customFunc) != 0         /*Search a2*/
 		)
 	{
 		/*The characters between a1 and a2 should be composed of spaces or HTs.*/
@@ -133,6 +149,58 @@ static unsigned int findTwoStringsWithSpace
 
 	return (foundFlg) ? a1_index : 0;
 
+}
+
+static unsigned int findMultipleStringWithSpace
+(
+	const char A[],
+	const char **a,
+	const unsigned int a_num,
+	const char *endCharArray,
+	unsigned int endCharArray_num,
+	unsigned int index,
+	unsigned int *next_index_ret,
+	void(*customFunc)(char, char, unsigned int)
+)
+{
+	bool foundFlg = false;
+	bool searchContinueFlg = true;
+	bool onlySpaceHTflg = true;
+	unsigned int next_index;
+	unsigned int *post_a_index = (unsigned int *)malloc(sizeof(unsigned int)*a_num);
+	post_a_index[0] = index;
+	while (searchContinueFlg && !foundFlg) {
+		for (unsigned int i = 0; i < a_num && searchContinueFlg; i++)
+		{
+			searchContinueFlg *= findString(A, a[i], endCharArray, endCharArray_num, post_a_index[i], &post_a_index[(i + 1) % a_num], customFunc);
+		}
+
+		onlySpaceHTflg = true;
+
+		for (unsigned int i = 0; i < a_num - 1 && searchContinueFlg && onlySpaceHTflg; i++)
+		{
+			for (
+				unsigned int l = post_a_index[i] + strlen(a[i]) - 1;
+				l <= post_a_index[i + 1] - 2 && onlySpaceHTflg;
+				l++
+				)
+			{
+				onlySpaceHTflg *= (A[l] == ' ' || A[l] == '\t');
+			}
+		}
+
+		if (searchContinueFlg && onlySpaceHTflg) {
+			printf("NOTE_FINDMULTIPLESTRINGWITHSPACE : found\n");
+			foundFlg = true;
+		}
+	}
+	
+	if (foundFlg && next_index_ret != NULL) *next_index_ret = post_a_index[0];
+	next_index = post_a_index[0];
+
+	FREE_SAFE(post_a_index);
+
+	return foundFlg ? next_index : 0;
 }
 
 #endif		/*FINDSTRING*/

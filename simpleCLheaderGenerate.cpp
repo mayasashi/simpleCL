@@ -5,7 +5,9 @@ struct fStr{
     char *              funcName;
     size_t              funcName_Length;
     std::vector<char *> argument_name;
-    std::vector<char *> argument_data;
+    std::vector<void *> argument_value_ptr;
+	std::vector<size_t> argument_value_size;
+
 };
 
 struct kernel_t {
@@ -246,6 +248,8 @@ void kernelHandler::generateHeaderString(){
                                           (*itr)->data,
                                           "kernel",
                                           "void",
+				                          NULL,
+				                          0,
                                           searchIndex,
                                           &searchIndex,
                                           quotationCommentQuery
@@ -263,16 +267,25 @@ void kernelHandler::generateHeaderString(){
                     
                     ((*itr)->funcVector).push_back(new fStr);
                     
-                    fStr *st = ((*itr)->funcVector).back();
+                    fStr *st = ((*itr)->funcVector).back(); 
                     
                     st->funcName = &((*itr)->data)[searchIndex];
                     st->funcName_Length = 1;
                     
-                    while(((*itr)->data)[searchIndex] == '('){
+                    while(((*itr)->data)[searchIndex] != '('){
                         searchIndex++;
                         (st->funcName_Length)++;
                     }
                     
+					
+					while (((*itr)->data)[searchIndex] != ')')
+					{
+						searchIndex++;
+						while (((*itr)->data)[searchIndex] != ',' && ((*itr)->data)[searchIndex] != ')')
+						{
+
+						}
+					}
                     
                     
                 }
