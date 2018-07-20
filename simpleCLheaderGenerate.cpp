@@ -1,5 +1,25 @@
 #include "simpleCLheaderGenerate.h"
 
+char *clTypeStr_REF[][2] = {
+	{ "bool","bool" },
+	{ "char","cl_char" },
+	{ "uchar","cl_uchar" },
+	{ "short","cl_short" },
+	{ "int","cl_int" },
+	{ "uint","cl_uint" },
+	{ "long","cl_long" },
+	{ "ulong","cl_ulong" },
+	{ "float","cl_float" },
+	{ "double","cl_double" },
+	{ "half","cl_half" },
+	{ "size_t","size_t" },
+	{ "ptrdiff_t","ptrdiff_t" },
+	{ "intptr_t","intptr_t" },
+	{ "uintptr_t","uintptr_t" },
+	{ "void","void" }
+};
+
+
 
 struct fStr{
     char *              funcName;
@@ -218,6 +238,8 @@ void kernelHandler::generateHeaderString(){
 	comment1Flg = false;
 	comment2Flg = false;
 
+	bool reachEndFlg = false;
+
     /*1 : Check whether all programs are built successfully. Otherwise abort the following process.*/
     for
         (
@@ -278,12 +300,23 @@ void kernelHandler::generateHeaderString(){
                     }
                     
 					
-					while (((*itr)->data)[searchIndex] != ')')
+					while (!reachEndFlg)
 					{
-						searchIndex++;
-						while (((*itr)->data)[searchIndex] != ',' && ((*itr)->data)[searchIndex] != ')')
+						while (
+							(((*itr)->data)[searchIndex] != ',' && 
+							 ((*itr)->data)[searchIndex] != ')')
+							||
+							quotationCommentQueryWithFlg(((*itr)->data)[searchIndex],((*itr)->data)[searchIndex - 1],0)
+							)
 						{
-
+							searchIndex++;
+						}
+						if (((*itr)->data)[searchIndex] == ')') reachEndFlg = true;
+						while (
+							((*itr)->data)[searchIndex] != ' ' && ((*itr)->data)[searchIndex] != '\t' && ((*itr)->data)[searchIndex] != '\n'
+							)
+						{
+							searchIndex--;
 						}
 					}
                     
@@ -304,6 +337,11 @@ void quotationCommentQuery(char u, char w,unsigned int i)
 
 	if (u == '*' && w == '/' && !quotationFlg && !comment1Flg) comment2Flg = true;
 	if (u == '/' && w == '*' && comment2Flg) comment2Flg = false;
+}
+bool quotationCommentQueryWithFlg(char u, char w, unsigned int i)
+{
+	quotationCommentQuery(u, w, i);
+	return (!quotationFlg && !comment1Flg && !comment2Flg);
 }
 
 inline bool variableCharFlg(char c)

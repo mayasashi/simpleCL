@@ -151,7 +151,7 @@ static unsigned int findTwoStringsWithSpace
 
 }
 
-static unsigned int findMultipleStringWithSpace
+static unsigned int findMultiStringWithSpace
 (
 	const char A[],
 	const char **a,
