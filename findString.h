@@ -110,24 +110,28 @@ static unsigned int findTwoStringsWithSpace
 	const char *endCharArray,
 	unsigned int endCharArray_num,
 	unsigned int index, 
-	unsigned int *next_index_ret, 
+	unsigned int *first_index_ret, 
+	unsigned int *last_index_ret,
 	void (*customFunc)(char,char,unsigned int)
 )
 {
 	
-	unsigned int a1_index = 0, a2_index = index;
+	unsigned int a1_index = 0, a2_index = 0;
 	unsigned int a1_size = strlen(a1);
 	unsigned int a2_size = strlen(a2);
 	unsigned int post_a1_index;
 	unsigned int pre_a2_index;
+	unsigned int first = index, last = 0;
 	bool foundFlg = false;
 	bool onlySpaceHTflg = true;
 	while (
 		!foundFlg &&
-		findString(A, a1, endCharArray, endCharArray_num, a2_index, &a1_index, customFunc) != 0 &&      /*Search a1*/
+		findString(A, a1, endCharArray, endCharArray_num, first, &a1_index, customFunc) != 0 &&      /*Search a1*/
 		findString(A, a2, endCharArray, endCharArray_num, a1_index, &a2_index, customFunc) != 0         /*Search a2*/
 		)
 	{
+		last = a2_index + a2_size - 1;
+
 		/*The characters between a1 and a2 should be composed of spaces or HTs.*/
 
 		post_a1_index = a1_index + a1_size - 1;
@@ -143,11 +147,15 @@ static unsigned int findTwoStringsWithSpace
 			printf("NOTE_FINDTWOSTRINGSWITHSPACE : found\n");
 			foundFlg = true;
 		}
+		else {
+			first = last;
+		}
 	}
 	
-	if (foundFlg && next_index_ret != NULL) *next_index_ret = a1_index;
+	if (foundFlg && first_index_ret != NULL) *first_index_ret = first;
+	if (foundFlg && last_index_ret != NULL) *last_index_ret = last;
 
-	return (foundFlg) ? a1_index : 0;
+	return (foundFlg) ? first : 0;
 
 }
 

@@ -47,7 +47,8 @@ struct kernel_t {
     
     
     /*opencl variables*/
-    cl_program program;						
+    cl_program program;
+	bool *quotation_or_comment;
 
 	/*constructor and destructor*/
 	kernel_t(const char *arg_path, const char *arg_name);
@@ -61,6 +62,7 @@ kernel_t::kernel_t(const char *arg_path, const char *arg_name) {
 	path = (char *)malloc(sizeof(char)*(arg_path_length + 1));
 	name = (char *)malloc(sizeof(char)*(arg_name_length + 1));
     data = NULL;
+	quotation_or_comment = NULL;
     buildStatus = 0;
 }
 
@@ -68,6 +70,7 @@ kernel_t::~kernel_t() {
 	FREE_SAFE(path);
 	FREE_SAFE(name);
     FREE_SAFE(data);
+	FREE_SAFE(quotation_or_comment);
 	FREE_SAFE(buildInfoLog);
 }
 
@@ -76,6 +79,8 @@ typedef std::vector<kernel_t*> kernel_vec;
 bool quotationFlg = false;
 bool comment1Flg = false;
 bool comment2Flg = false;
+bool comment2restrict = false;
+int comment2restrictCount = 0;
 
 kernel_vec *mainKernelVec = NULL;   /*Main kernel vector object*/
 
@@ -106,7 +111,8 @@ struct kernelContainer {
 	}
 };
 
-void quotationCommentQuery(char u, char w,unsigned int i);
+void quotationCommentQuery(char t, char u,char v);
+bool quotationCommentQueryWithFlg(char t, char u, char v);
 inline bool variableCharFlg(char c);
 
 kernelHandler::kernelHandler(){
@@ -139,13 +145,30 @@ void kernelHandler::loadProgramFile(){
         
       /*3:Allocate memory to store the kernel data*/
         
-        (*itr)->data = (char *)malloc((*itr)->data_length);
+        (*itr)->data                 = (char *)malloc((*itr)->data_length);
+		(*itr)->quotation_or_comment = (bool *)malloc(sizeof(bool)*(*itr)->data_length);
         
       /*4:Load data*/
-        
+
+		quotationFlg = false;
+		comment1Flg = false;
+		comment2Flg = false;
         for(int i = 0; i < (*itr)->data_length; i++)
         {
             ((*itr)->data)[i] = (char)fgetc((*itr)->file);
+			if (i == 0)
+			{
+				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(0, ((*itr)->data)[i], ((*itr)->data)[i + 1]);
+			}
+			else if (i < (*itr)->data_length)
+			{
+				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], 0);
+			}
+			else
+			{
+				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], ((*itr)->data)[i + 1]);
+			}
+			
         }
     }
 }
@@ -258,6 +281,7 @@ void kernelHandler::generateHeaderString(){
 		/*2: Search kernel functions in the kernel file.*/
 		
 		unsigned int searchIndex = 0;
+		unsigned int searchIndex_sub = 0;
 		
 		for (
 			kernel_vec::iterator itr = mainKernelVec->begin();
@@ -273,15 +297,21 @@ void kernelHandler::generateHeaderString(){
 				                          NULL,
 				                          0,
                                           searchIndex,
+										  &searchIndex_sub,
                                           &searchIndex,
-                                          quotationCommentQuery
+                                          NULL
                                           ) != 0
                   )
             {
                 /*if we find the characters "kernel void" */
                 
-                if(!quotationFlg && !comment1Flg && !comment2Flg){
-                    while(((*itr)->data)[searchIndex] == ' ' || ((*itr)->data)[searchIndex] == '\t'){
+                if(!((*itr)->quotation_or_comment)[searchIndex_sub]){
+                    while(
+						((*itr)->data)[searchIndex] == ' ' ||
+						((*itr)->data)[searchIndex] == '\t' ||
+						((*itr)->quotation_or_comment)[searchIndex]
+						)
+					{
                         searchIndex++;
                     }
                     
@@ -294,7 +324,14 @@ void kernelHandler::generateHeaderString(){
                     st->funcName = &((*itr)->data)[searchIndex];
                     st->funcName_Length = 1;
                     
-                    while(((*itr)->data)[searchIndex] != '('){
+                    while(
+						((*itr)->data)[searchIndex] != '(' &&
+						((*itr)->data)[searchIndex] != ' ' &&
+						((*itr)->data)[searchIndex] != '\t' &&
+						((*itr)->data)[searchIndex] != '\n' &&
+
+						)
+					{
                         searchIndex++;
                         (st->funcName_Length)++;
                     }
@@ -327,21 +364,27 @@ void kernelHandler::generateHeaderString(){
 	}
 }
 
-void quotationCommentQuery(char u, char w,unsigned int i)
+void quotationCommentQuery(char t,char u, char v)
 {
+	if (comment2restrict) comment2restrictCount++;
+	if (comment2restrictCount == 3) { comment2restrictCount = 0; comment2restrict = false; }
+	//  ' " '
 	if (u == '"' && !quotationFlg && !comment1Flg && !comment2Flg) quotationFlg = true;
-	if (u == '"' && w != '\\' && quotationFlg) quotationFlg = false;
+	else if (u == '"' && t != '\\' && quotationFlg) quotationFlg = false;
 
-	if (u == '/' && w == '/' && !quotationFlg && !comment2Flg) comment1Flg = true;
-	if (u == '\n' && comment1Flg) comment1Flg = false;
+	//  ' // '
+	if (u == '/' && v == '/' && !quotationFlg && !comment2Flg) comment1Flg = true;
+	else if (u == '\n' && comment1Flg) comment1Flg = false;
 
-	if (u == '*' && w == '/' && !quotationFlg && !comment1Flg) comment2Flg = true;
-	if (u == '/' && w == '*' && comment2Flg) comment2Flg = false;
+	//  ' /* */ '
+	if (u == '/' && v == '*' && !quotationFlg && !comment1Flg && !comment2restrict) { comment2Flg = true; comment2restrict = true; }
+	else if (u == '/' && t == '*' && comment2Flg && !comment2restrict) comment2Flg = false;
+
 }
-bool quotationCommentQueryWithFlg(char u, char w, unsigned int i)
+bool quotationCommentQueryWithFlg(char t, char u, char v)
 {
-	quotationCommentQuery(u, w, i);
-	return (!quotationFlg && !comment1Flg && !comment2Flg);
+	quotationCommentQuery(t, u, v);
+	return (quotationFlg || comment1Flg || comment2Flg);
 }
 
 inline bool variableCharFlg(char c)
