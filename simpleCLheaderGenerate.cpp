@@ -125,7 +125,13 @@ kernelHandler::~kernelHandler() {
 
 
 void kernelHandler::addKernelProgram(const char *path, const char *name) {
-    mainKernelVec->push_back(new kernel_t(path,name));
+	kernel_t *k = new kernel_t(path, name);
+	if (mainKernelVec != NULL) {
+		mainKernelVec->push_back(k);
+	}
+	else {
+		printf("WARNING (%s) : mainKernelVec points null pointer. \n",__func__);
+	}
 }
 
 void kernelHandler::loadProgramFile(){
@@ -328,7 +334,7 @@ void kernelHandler::generateHeaderString(){
 						((*itr)->data)[searchIndex] != '(' &&
 						((*itr)->data)[searchIndex] != ' ' &&
 						((*itr)->data)[searchIndex] != '\t' &&
-						((*itr)->data)[searchIndex] != '\n' &&
+						((*itr)->data)[searchIndex] != '\n'
 
 						)
 					{
