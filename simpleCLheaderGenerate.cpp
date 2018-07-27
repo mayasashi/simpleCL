@@ -38,6 +38,7 @@ struct kernel_t {
 	char *name;				/*Name used to specify the kernel file*/
     char *data;				/*Char pointer to actual data in memory*/
     long  data_length;		/*Length of actual data in memory*/
+	bool notFound;          /*When a file object fails to load the kernel file, this flag is set to true.*/
 
 	cl_build_status buildStatus;			/*Program build status*/
 	char         *  buildInfoLog;			/*Program build info log returned when a program compilation fails*/
@@ -62,16 +63,20 @@ kernel_t::kernel_t(const char *arg_path, const char *arg_name) {
 	path = (char *)malloc(sizeof(char)*(arg_path_length + 1));
 	name = (char *)malloc(sizeof(char)*(arg_name_length + 1));
     data = NULL;
-	quotation_or_comment = NULL;
+	notFound = false;
     buildStatus = 0;
+	buildInfoLog = NULL;
+	buildInfoLogLength = 0;
+	quotation_or_comment = NULL;
 }
 
 kernel_t::~kernel_t() {
 	FREE_SAFE(path);
 	FREE_SAFE(name);
     FREE_SAFE(data);
-	FREE_SAFE(quotation_or_comment);
 	FREE_SAFE(buildInfoLog);
+	FREE_SAFE(quotation_or_comment);
+	
 }
 
 typedef std::vector<kernel_t*> kernel_vec;
@@ -90,7 +95,7 @@ struct kernelContainer {
 		printf("constructor called.\n");
 		if (mainKernelVec == NULL)
 		{
-			mainKernelVec = (kernel_vec *)malloc(sizeof(kernel_vec));
+			mainKernelVec = new kernel_vec();
 		}
 		kernelVec = mainKernelVec;
 	}
@@ -107,7 +112,7 @@ struct kernelContainer {
 			}
 			mainKernelVec->clear();
 		}
-		FREE_SAFE(mainKernelVec);
+		delete kernelVec;
 	}
 };
 
@@ -125,13 +130,7 @@ kernelHandler::~kernelHandler() {
 
 
 void kernelHandler::addKernelProgram(const char *path, const char *name) {
-	kernel_t *k = new kernel_t(path, name);
-	if (mainKernelVec != NULL) {
-		mainKernelVec->push_back(k);
-	}
-	else {
-		printf("WARNING (%s) : mainKernelVec points null pointer. \n",__func__);
-	}
+	mainKernelVec->push_back(new kernel_t(path, name));
 }
 
 void kernelHandler::loadProgramFile(){
@@ -142,47 +141,53 @@ void kernelHandler::loadProgramFile(){
       /*1:Open a kernel file*/
         
         (*itr)->file = fopen((*itr)->path, "r");
-        
-      /*2:Obtain the file size*/
-        
-        fseek((*itr)->file, 0L, SEEK_END);
-        (*itr)->data_length = ftell((*itr)->file);
-        rewind((*itr)->file);
-        
-      /*3:Allocate memory to store the kernel data*/
-        
-        (*itr)->data                 = (char *)malloc((*itr)->data_length);
-		(*itr)->quotation_or_comment = (bool *)malloc(sizeof(bool)*(*itr)->data_length);
-        
-      /*4:Load data*/
+		if ((*itr)->file == NULL)
+		{
+			printf("SIMPLECLHEADERGENERATE (%s) : kernel file not found.\n",__func__);
+			(*itr)->notFound = true;
+		}
+		else {
+			/*2:Obtain the file size*/
 
-		quotationFlg = false;
-		comment1Flg = false;
-		comment2Flg = false;
-        for(int i = 0; i < (*itr)->data_length; i++)
-        {
-            ((*itr)->data)[i] = (char)fgetc((*itr)->file);
-			if (i == 0)
+			fseek((*itr)->file, 0L, SEEK_END);
+			(*itr)->data_length = ftell((*itr)->file);
+			rewind((*itr)->file);
+
+			/*3:Allocate memory to store the kernel data*/
+
+			(*itr)->data = (char *)malloc((*itr)->data_length);
+			(*itr)->quotation_or_comment = (bool *)malloc(sizeof(bool)*(*itr)->data_length);
+
+			/*4:Load data*/
+
+			quotationFlg = false;
+			comment1Flg = false;
+			comment2Flg = false;
+			for (int i = 0; i < (*itr)->data_length; i++)
 			{
-				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(0, ((*itr)->data)[i], ((*itr)->data)[i + 1]);
+				((*itr)->data)[i] = (char)fgetc((*itr)->file);
+				if (i == 0)
+				{
+					((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(0, ((*itr)->data)[i], ((*itr)->data)[i + 1]);
+				}
+				else if (i < (*itr)->data_length)
+				{
+					((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], 0);
+				}
+				else
+				{
+					((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], ((*itr)->data)[i + 1]);
+				}
 			}
-			else if (i < (*itr)->data_length)
-			{
-				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], 0);
-			}
-			else
-			{
-				((*itr)->quotation_or_comment)[i] = quotationCommentQueryWithFlg(((*itr)->data)[i - 1], ((*itr)->data)[i], ((*itr)->data)[i + 1]);
-			}
-			
-        }
+		}
     }
 }
 
 void kernelHandler::buildProgram(simpleCLhandler handler){
     for(
 		kernel_vec::iterator itr = mainKernelVec->begin();
-        itr < mainKernelVec->end();
+        itr < mainKernelVec->end() &&
+		!(*itr)->notFound;
         itr++
 		)
     {
@@ -247,7 +252,8 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 	printf("Compile Device Used : %s\n\n", handler->device_name);
 	for (
 		kernel_vec::iterator itr = mainKernelVec->begin();
-		itr < mainKernelVec->end();
+		itr < mainKernelVec->end() &&
+		!(*itr)->notFound;
 		itr++
 		)
 	{
