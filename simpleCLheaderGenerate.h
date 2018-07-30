@@ -32,10 +32,11 @@ struct kernelHandler {
 	kernelHandler();
 	~kernelHandler();
 
-	void addKernelProgram(const char *path, const char *name);
+	void addKernelProgramFile(const char *path, const char *name, cl_uint ID);
     void loadProgramFile();
     void buildProgram(simpleCLhandler handler);
 	void printProgramBuildInfo(simpleCLhandler handler);
+	cl_program & getProgram(cl_uint ID);
 	void generateHeaderString();
 };
 

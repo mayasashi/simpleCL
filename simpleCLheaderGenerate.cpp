@@ -19,15 +19,44 @@ char *clTypeStr_REF[][2] = {
 	{ "void","void" }
 };
 
+struct kernel_t;
+
+typedef struct IDChainContainer {
+	cl_uint ID;
+	kernel_t *k;
+	IDChainContainer *nextAddress;
+	IDChainContainer *lastAddress;
+}_IDChainContainer;
+
+typedef _IDChainContainer *IDChainHandler;
 
 
+
+IDChainHandler mainICH = NULL;
+
+kernel_t * getKernelUsingID(cl_uint ID)
+{
+	bool foundFlg = false;
+	if (mainICH == NULL) return NULL;
+	else {
+		IDChainHandler searchICH = mainICH;
+		while (!foundFlg && searchICH->nextAddress != NULL)
+		{
+			searchICH = searchICH->nextAddress;
+			foundFlg = (searchICH->ID == ID);
+		}
+		if (foundFlg) {
+			return searchICH->k;
+		}
+	}
+	return NULL;
+}
 struct fStr{
     char *              funcName;
     size_t              funcName_Length;
     std::vector<char *> argument_name;
     std::vector<void *> argument_value_ptr;
 	std::vector<size_t> argument_value_size;
-
 };
 
 struct kernel_t {
@@ -45,29 +74,46 @@ struct kernel_t {
 	size_t          buildInfoLogLength;		/*Length of build info log*/
     
     std::vector<fStr *> funcVector;
-    
+	IDChainHandler ICH;
     
     /*opencl variables*/
     cl_program program;
 	bool *quotation_or_comment;
 
 	/*constructor and destructor*/
-	kernel_t(const char *arg_path, const char *arg_name);
+	kernel_t(const char *arg_path, const char *arg_name, cl_uint arg_ID);
 	~kernel_t();
 };
 
-kernel_t::kernel_t(const char *arg_path, const char *arg_name) {
+kernel_t::kernel_t(const char *arg_path, const char *arg_name, cl_uint arg_ID) {
 	size_t arg_path_length = strlen(arg_path);
 	size_t arg_name_length = strlen(arg_name);
     file = NULL;
 	path = (char *)malloc(sizeof(char)*(arg_path_length + 1));
 	name = (char *)malloc(sizeof(char)*(arg_name_length + 1));
+	sprintf(path, "%s", arg_path);
+	sprintf(name, "%s", arg_name);
     data = NULL;
 	notFound = false;
     buildStatus = 0;
 	buildInfoLog = NULL;
 	buildInfoLogLength = 0;
 	quotation_or_comment = NULL;
+	
+	ICH = (IDChainHandler)malloc(sizeof(_IDChainContainer));
+	ICH->ID = arg_ID;
+	ICH->k = this;
+	ICH->nextAddress = NULL;
+	ICH->lastAddress = NULL;
+
+	if (mainICH->lastAddress != NULL)
+	{
+		(mainICH->lastAddress)->nextAddress = ICH;
+	}
+	else {
+		mainICH->nextAddress = ICH;
+	}
+	mainICH->lastAddress = ICH;
 }
 
 kernel_t::~kernel_t() {
@@ -76,7 +122,7 @@ kernel_t::~kernel_t() {
     FREE_SAFE(data);
 	FREE_SAFE(buildInfoLog);
 	FREE_SAFE(quotation_or_comment);
-	
+	FREE_SAFE(ICH);
 }
 
 typedef std::vector<kernel_t*> kernel_vec;
@@ -91,13 +137,23 @@ kernel_vec *mainKernelVec = NULL;   /*Main kernel vector object*/
 
 struct kernelContainer {
 	kernel_vec *kernelVec;
+	IDChainHandler ICH;
 	kernelContainer() {
 		printf("constructor called.\n");
 		if (mainKernelVec == NULL)
 		{
 			mainKernelVec = new kernel_vec();
 		}
+		if (mainICH == NULL)
+		{
+			mainICH = (IDChainHandler)malloc(sizeof(_IDChainContainer));
+			mainICH->ID = NULL;
+			mainICH->k = NULL;
+			mainICH->lastAddress = NULL;
+			mainICH->nextAddress = NULL;
+		}
 		kernelVec = mainKernelVec;
+		ICH = mainICH;
 	}
 	~kernelContainer() {
 		printf("destructor called.\n");
@@ -111,6 +167,7 @@ struct kernelContainer {
 				if (*itr != NULL) delete *itr;
 			}
 			mainKernelVec->clear();
+			FREE_SAFE(mainICH);
 		}
 		delete kernelVec;
 	}
@@ -129,8 +186,8 @@ kernelHandler::~kernelHandler() {
 }
 
 
-void kernelHandler::addKernelProgram(const char *path, const char *name) {
-	mainKernelVec->push_back(new kernel_t(path, name));
+void kernelHandler::addKernelProgramFile(const char *path, const char *name, cl_uint ID) {
+	mainKernelVec->push_back(new kernel_t(path, name, ID));
 }
 
 void kernelHandler::loadProgramFile(){
@@ -144,6 +201,7 @@ void kernelHandler::loadProgramFile(){
 		if ((*itr)->file == NULL)
 		{
 			printf("SIMPLECLHEADERGENERATE (%s) : kernel file not found.\n",__func__);
+			printf("Source path : %s\n", (*itr)->path);
 			(*itr)->notFound = true;
 		}
 		else {
@@ -263,6 +321,11 @@ void kernelHandler::printProgramBuildInfo(simpleCLhandler handler) {
 			printf("(BuildLog)\n%s\n", (*itr)->buildInfoLog);
 		}
 	}
+}
+
+cl_program & kernelHandler::getProgram(cl_uint ID)
+{
+	return (*getKernelUsingID(ID)).program;
 }
 
 void kernelHandler::generateHeaderString(){
